@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Break-Even Analyzer Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="no-print">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fa-solid fa-chart-line"></i>
+                <span data-i18n="appTitle">Break-Even Pro</span>
+            </div>
+            
+            <button class="mobile-menu-toggle icon-btn" id="mobileMenuBtn"><i class="fa-solid fa-bars"></i></button>
+
+            <nav class="main-nav" id="mainNavigation">
+                <button class="nav-link" data-page="about"><i class="fa-solid fa-circle-info"></i> <span data-i18n="navAbout">About</span></button>
+                <button class="nav-link active" data-page="calculator"><i class="fa-solid fa-calculator"></i> <span data-i18n="navCalculator">Dashboard</span></button>
+                <button class="nav-link" data-page="history"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="navHistory">History</span></button>
+                <button class="nav-link" data-page="aichat"><i class="fa-solid fa-robot"></i> <span data-i18n="navAiChat">AI Assistant</span></button>
+                <button class="nav-link" data-page="reports"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="navReports">Reports</span></button>
+                <button class="nav-link" data-page="egx"><i class="fa-solid fa-building-columns"></i> <span data-i18n="navEgx">البورصة المصرية</span></button>
+                <button class="nav-link" data-page="diagrams"><i class="fa-solid fa-sitemap"></i> <span data-i18n="navDiagrams">ERD/DFD</span></button>
+            </nav>
+
+            <div class="controls">
+                <select id="currencySelect" class="currency-dropdown">
+                    <option value="EGP">EGP (ج.م)</option>
+                    <option value="SAR">SAR (ريال)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                </select>
+                <button id="langToggle" class="icon-btn" title="تغيير اللغة"><i class="fa-solid fa-earth-americas"></i> <span id="currentLangLabel">AR</span></button>
+                <button id="themeToggle" class="icon-btn"><i class="fa-solid fa-moon"></i></button>
+                <button id="openCalcBtn" class="icon-btn hidden" title="الآلة الحاسبة"><i class="fa-solid fa-calculator"></i></button>
+                
+                <button id="profileBtn" class="icon-btn hidden nav-link" data-page="profile" title="الملف الشخصي" style="padding: 5px;">
+                    <img id="headerAvatarImg" src="" alt="User" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
+                </button>
+
+                <button id="logoutBtn" class="icon-btn hidden" title="تسجيل الخروج"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <div id="floating-calc" class="floating-calc hidden no-print">
+        <div class="calc-header">
+            <span>آلة حاسبة</span>
+            <button id="closeCalcBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <input type="text" id="calc-display" readonly>
+        <div class="calc-keys">
+            <button onclick="calcInput('7')">7</button><button onclick="calcInput('8')">8</button><button onclick="calcInput('9')">9</button><button class="op" onclick="calcInput('/')">÷</button>
+            <button onclick="calcInput('4')">4</button><button onclick="calcInput('5')">5</button><button onclick="calcInput('6')">6</button><button class="op" onclick="calcInput('*')">×</button>
+            <button onclick="calcInput('1')">1</button><button onclick="calcInput('2')">2</button><button onclick="calcInput('3')">3</button><button class="op" onclick="calcInput('-')">-</button>
+            <button onclick="calcInput('C')">C</button><button onclick="calcInput('0')">0</button><button onclick="calcEq()">=</button><button class="op" onclick="calcInput('+')">+</button>
+        </div>
+    </div>
+
+    <div id="codeModal" class="code-modal hidden no-print">
+        <div class="code-modal-content">
+            <div class="code-header">
+                <h3 dir="ltr" style="margin:0;"><i class="fa-solid fa-code"></i> Source Code</h3>
+                <button onclick="closeCodeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <pre><code id="codeSnippetContent"></code></pre>
+        </div>
+    </div>
+
+    <main id="app-content">
+        <section id="page-auth" class="page-view active">
+            <div class="auth-wrapper">
+                <div class="card auth-card animate-up">
+                    <div class="auth-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h2 data-i18n="authLoginTitle">تسجيل الدخول</h2>
+                    <form id="authForm">
+                        <div class="input-group"><label>البريد الإلكتروني</label><input type="email" id="authEmail" required></div>
+                        <div class="input-group"><label>كلمة المرور</label><input type="password" required></div>
+                        <button type="submit" class="primary-btn w-100"><i class="fa-solid fa-right-to-bracket"></i> دخول المنصة</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-profile" class="page-view">
+            <div class="section-header no-print">
+                <h2><i class="fa-solid fa-id-card"></i> <span data-i18n="profileTitle">الملف الشخصي</span></h2>
+            </div>
+            
+            <div class="dashboard-layout" style="grid-template-columns: 350px 1fr;">
+                <div class="card" style="align-items: center; text-align: center;">
+                    <div class="profile-avatar-container">
+                        <img id="profileAvatar" src="" alt="Profile">
+                        <label for="avatarUpload" class="avatar-edit-btn" title="تغيير الصورة"><i class="fa-solid fa-camera"></i></label>
+                        <input type="file" id="avatarUpload" accept="image/*" class="hidden">
+                    </div>
+                    <h3 id="profileNameDisplay" class="mt-3 text-primary"></h3>
+                    <p id="profileEmailDisplay" class="text-secondary"></p>
+                    
+                    <div class="w-100 mt-4">
+                        <div class="report-data-box mb-3">
+                            <h4><i class="fa-solid fa-layer-group"></i> المشاريع الحالية</h4>
+                            <strong id="statActiveProjects" style="font-size: 1.8rem; color: var(--brand-primary);">0</strong>
+                        </div>
+                        <div class="report-data-box">
+                            <h4><i class="fa-solid fa-clock-rotate-left"></i> السجلات المحفوظة</h4>
+                            <strong id="statSavedReports" style="font-size: 1.8rem; color: var(--success);">0</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 class="mb-4 text-primary" style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
+                        <i class="fa-solid fa-user-pen"></i> البيانات الأساسية
+                    </h3>
+                    <form id="profileForm">
+                        <div class="report-grid-2">
+                            <div class="input-group"><label>الاسم الكامل</label><input type="text" id="profName" required></div>
+                            <div class="input-group"><label>اسم المستخدم (Username)</label><input type="text" id="profUsername" required></div>
+                            <div class="input-group" style="grid-column: 1 / -1;"><label>البريد الإلكتروني</label><input type="email" id="profEmail" required></div>
+                        </div>
+                        <button type="submit" class="primary-btn mt-2"><i class="fa-solid fa-floppy-disk"></i> حفظ البيانات</button>
+                    </form>
+
+                    <h3 class="mt-4 mb-4 text-primary" style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 30px !important;">
+                        <i class="fa-solid fa-lock"></i> تغيير الأمان وكلمة المرور
+                    </h3>
+                    <form id="passwordForm">
+                        <div class="report-grid-2">
+                            <div class="input-group"><label>كلمة المرور الحالية</label><input type="password" id="oldPass" required></div>
+                            <div class="input-group"><label>كلمة المرور الجديدة</label><input type="password" id="newPass" required></div>
+                        </div>
+                        <button type="submit" class="primary-btn outline mt-2"><i class="fa-solid fa-key"></i> تحديث كلمة المرور</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-calculator" class="page-view">
+            <div class="section-header no-print">
+                <h2><i class="fa-solid fa-chart-pie"></i> <span data-i18n="calcPageTitle">Dashboard</span></h2>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="primary-btn outline code-trigger" onclick="showCode('dashboard')"><i class="fa-solid fa-code"></i></button>
+                    <button class="primary-btn success" onclick="exportToExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                    <button class="primary-btn outline" onclick="window.print()"><i class="fa-solid fa-print"></i></button>
+                </div>
+            </div>
+            
+            <div class="dashboard-layout">
+                <div class="scenarios-sidebar no-print">
+                    <div class="sidebar-header">
+                        <h3 data-i18n="scenariosTitle">Projects</h3>
+                        <button id="addScenarioBtn" class="action-btn"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="scenariosList" class="scenarios-list"></div>
+                    <button class="primary-btn w-100 mt-2" onclick="saveToHistory()"><i class="fa-solid fa-save"></i> حفظ في السجلات</button>
+                </div>
+
+                <div class="chart-main-area">
+                    <div id="winnerBanner" class="winner-banner hidden animate-up"></div>
+
+                    <div class="card results-preview-card mb-4 position-relative">
+                        <button class="code-btn code-trigger no-print" onclick="showCode('results')"><i class="fa-solid fa-code"></i></button>
+                        <h3 data-i18n="calcResultsTitle">النتائج والتقارير المباشرة</h3>
+                        <div id="inlineResultsGrid" class="inline-results-grid"></div>
+                    </div>
+
+                    <div class="card mb-4 no-print sensitivity-panel animate-up position-relative">
+                        <button class="code-btn code-trigger no-print" onclick="showCode('sensitivity')"><i class="fa-solid fa-code"></i></button>
+                        <h3><i class="fa-solid fa-sliders"></i> تحليل الحساسية التفاعلي (المشروع الأول)</h3>
+                        <div class="sliders-grid mt-2">
+                            <div><label>التكلفة المتغيرة:</label> <input type="range" id="sensVc" min="1" max="500" oninput="updateSensitivity()"> <span id="sensVcVal" class="slider-val"></span></div>
+                            <div><label>سعر البيع:</label> <input type="range" id="sensSp" min="1" max="1000" oninput="updateSensitivity()"> <span id="sensSpVal" class="slider-val"></span></div>
+                        </div>
+                    </div>
+
+                    <div id="tablesContainer" class="tables-grid-container mb-4"></div>
+
+                    <div class="charts-grid mt-4">
+                        <div class="card chart-card position-relative">
+                            <button class="code-btn code-trigger no-print" onclick="showCode('charts')"><i class="fa-solid fa-code"></i></button>
+                            <h3 data-i18n="chart1Title">1. Area Chart</h3><div id="chart-area" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart1DescShort"></span> <span class="more-text hidden" data-i18n="chart1DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart2Title">2. Line Chart</h3><div id="chart-line" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart2DescShort"></span> <span class="more-text hidden" data-i18n="chart2DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart3Title">3. Column Chart</h3><div id="chart-column" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart3DescShort"></span> <span class="more-text hidden" data-i18n="chart3DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart4Title">4. Bar Chart</h3><div id="chart-bar" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart4DescShort"></span> <span class="more-text hidden" data-i18n="chart4DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart5Title">5. Pie Chart</h3><div id="chart-pie" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart5DescShort"></span> <span class="more-text hidden" data-i18n="chart5DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart6Title">6. Doughnut Chart</h3><div id="chart-doughnut" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart6DescShort"></span> <span class="more-text hidden" data-i18n="chart6DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart7Title">7. Candlestick Chart</h3><div id="chart-candlestick" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart7DescShort"></span> <span class="more-text hidden" data-i18n="chart7DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart8Title">8. Box Plot</h3><div id="chart-boxplot" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart8DescShort"></span> <span class="more-text hidden" data-i18n="chart8DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3 data-i18n="chart9Title">9. Histogram</h3><div id="chart-histogram" class="apex-chart-container"></div>
+                            <div class="expert-insight"><i class="fa-solid fa-lightbulb"></i> <div><span data-i18n="chart9DescShort"></span> <span class="more-text hidden" data-i18n="chart9DescFull"></span> <button class="read-more-btn" onclick="toggleText(this)" data-i18n="readMoreBtn">اقرأ المزيد</button></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-history" class="page-view">
+            <div class="section-header no-print"><h2><i class="fa-solid fa-clock-rotate-left"></i> السجلات المحفوظة</h2></div>
+            <div id="historyContainer" class="history-grid"></div>
+        </section>
+
+        <section id="page-aichat" class="page-view">
+            <div class="section-header"><h2><i class="fa-solid fa-robot"></i> المساعد الذكي</h2></div>
+            <div class="chat-container card position-relative">
+                <button class="code-btn code-trigger no-print" onclick="showCode('ai')"><i class="fa-solid fa-code"></i></button>
+                <div class="ai-suggestions no-print" id="aiQuestionsContainer"></div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-bubble">أهلاً! أنا المساعد الذكي لمشروع نقطة التعادل. أنا هنا لتقديم تحليلات مالية دقيقة. تفضل باختيار سؤال من الأعلى أو اكتب سؤالك.</div></div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="اكتب سؤالك هنا...">
+                    <button id="sendChatBtn" class="primary-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-diagrams" class="page-view">
+            <div class="section-header"><h2><i class="fa-solid fa-sitemap"></i> المخططات الهندسية للمشروع (ERD & DFD)</h2></div>
+            <div class="charts-grid diagram-layout">
+                <div class="card position-relative">
+                    <button class="code-btn code-trigger no-print" onclick="showCode('erd')"><i class="fa-solid fa-code"></i></button>
+                    <h3 class="mb-4 text-center">مخطط علاقات الكيانات (ERD) المتطور</h3>
+                    <div class="custom-diagram">
+                        <div class="erd-container">
+                            <div class="db-table">
+                                <div class="db-header"><i class="fa-solid fa-user"></i> USER</div>
+                                <div class="db-row"><i class="fa-solid fa-key"></i> User_ID (PK)</div>
+                                <div class="db-row">Email</div>
+                                <div class="db-row">Password</div>
+                                <div class="db-row">CreatedAt</div>
+                            </div>
+                            
+                            <div class="erd-relation">
+                                <div class="relation-line"></div>
+                                <div class="relation-label">1 : N</div>
+                            </div>
+                            
+                            <div class="db-table" style="border-color: #f59e0b;">
+                                <div class="db-header" style="background: #f59e0b;"><i class="fa-solid fa-layer-group"></i> PROJECT</div>
+                                <div class="db-row"><i class="fa-solid fa-key"></i> Project_ID (PK)</div>
+                                <div class="db-row">User_ID (FK)</div>
+                                <div class="db-row">Fixed_Cost</div>
+                                <div class="db-row">Var_Cost</div>
+                                <div class="db-row">Sell_Price</div>
+                            </div>
+
+                            <div class="erd-relation">
+                                <div class="relation-line"></div>
+                                <div class="relation-label">1 : N</div>
+                            </div>
+
+                            <div class="db-table" style="border-color: #10b981;">
+                                <div class="db-header" style="background: #10b981;"><i class="fa-solid fa-clock-rotate-left"></i> LOG_HISTORY</div>
+                                <div class="db-row"><i class="fa-solid fa-key"></i> Log_ID (PK)</div>
+                                <div class="db-row">Project_ID (FK)</div>
+                                <div class="db-row">Saved_Date</div>
+                                <div class="db-row">Results_JSON</div>
+                            </div>
+
+                            <div class="erd-relation">
+                                <div class="relation-line"></div>
+                                <div class="relation-label">1 : 1</div>
+                            </div>
+
+                            <div class="db-table" style="border-color: #8b5cf6;">
+                                <div class="db-header" style="background: #8b5cf6;"><i class="fa-solid fa-gear"></i> SETTINGS</div>
+                                <div class="db-row"><i class="fa-solid fa-key"></i> Set_ID (PK)</div>
+                                <div class="db-row">User_ID (FK)</div>
+                                <div class="db-row">Theme</div>
+                                <div class="db-row">Currency</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card position-relative mt-4">
+                    <h3 class="mb-4 text-center">مخطط تدفق البيانات (DFD)</h3>
+                    <div class="custom-diagram">
+                        <div class="dfd-container">
+                            <div class="dfd-node user-node" style="background:#e0f2fe; border-color:#0284c7;"><i class="fa-solid fa-user"></i> المستخدم / المحلل المالي</div>
+                            <div class="dfd-arrow"><i class="fa-solid fa-arrow-down-long"></i><br><span>إدخال المتغيرات (تكاليف وسعر)</span></div>
+                            
+                            <div class="dfd-node process-node"><i class="fa-solid fa-shield-check"></i> التحقق من صحة البيانات (Validation)</div>
+                            <div class="dfd-arrow"><i class="fa-solid fa-arrow-down-long"></i><br><span>بيانات صحيحة</span></div>
+
+                            <div class="dfd-node process-node" style="background:#fef3c7; color:#b45309; border-color:#b45309;"><i class="fa-solid fa-gear"></i> محرك الحسابات الرئيسي (Engine)</div>
+                            <div class="dfd-arrow"><i class="fa-solid fa-arrow-down-long"></i><br><span>مخرجات ومؤشرات مالية</span></div>
+
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%;">
+                                <div class="dfd-node output-node"><i class="fa-solid fa-chart-pie"></i> رسوم بيانية</div>
+                                <div class="dfd-node store-node"><i class="fa-solid fa-database"></i> التخزين المحلي</div>
+                                <div class="dfd-node output-node" style="background:#f3e8ff; color:#6b21a8; border-color:#7e22ce;"><i class="fa-solid fa-file-pdf"></i> تقارير استشارية</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <h3><i class="fa-solid fa-server"></i> شرح هيكل قواعد البيانات (Database Schema)</h3>
+                    <div class="expert-insight mt-3" style="flex-direction: column;">
+                        <p>تم تصميم قاعدة بيانات النظام لتكون علاقاتية (Relational Database) بما يضمن تكامل البيانات وسرعة استرجاعها، وتتكون من أربعة جداول رئيسية:</p>
+                        <ul style="margin-right: 20px; line-height: 2;">
+                            <li><strong>جدول المستخدم (USER):</strong> الكيان الأساسي في النظام، يخزن بيانات الدخول الخاصة بالمحلل المالي. يمتلك علاقة (واحد إلى متعدد) مع المشاريع والإعدادات.</li>
+                            <li><strong> جدول المشاريع (PROJECT):</strong> يخزن المدخلات المالية (التكلفة الثابتة، المتغيرة، السعر). كل مستخدم يمكنه إنشاء عدة مشاريع للحفظ والمقارنة.</li>
+                            <li><strong>جدول السجلات (LOG_HISTORY):</strong> مرتبط بجدول المشاريع. يقوم بأخذ (لقطة Snapshot) من النتائج المالية وحفظها بالتاريخ للعودة إليها كمرجع.</li>
+                            <li><strong>جدول الإعدادات (SETTINGS):</strong> مرتبط بجدول المستخدم، يحفظ تفضيلات واجهة الاستخدام مثل العملة (دولار، ريال، جنيه) والوضع (المظلم/الفاتح).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-reports" class="page-view">
+            <div class="section-header no-print">
+                <h2><i class="fa-solid fa-file-pdf"></i> التقارير المالية المفصلة</h2>
+                <button class="primary-btn" onclick="printReports()"><i class="fa-solid fa-print"></i> طباعة التقارير</button>
+            </div>
+            <div id="detailedReportsContainer" class="detailed-reports-container"></div>
+        </section>
+
+        <section id="page-egx" class="page-view">
+            <div class="section-header">
+                <h2><i class="fa-solid fa-building-columns"></i> <span data-i18n="egxTitle">البورصة المصرية</span></h2>
+            </div>
+            <div class="card egx-card">
+                <div class="egx-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <p class="egx-desc" data-i18n="egxDesc">تابع أسعار الأسهم والمؤشرات على البورصة المصرية.</p>
+                <a href="https://www.egx.com.eg/" target="_blank" rel="noopener noreferrer" class="primary-btn egx-link-btn">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span data-i18n="egxBtn">زيارة موقع البورصة المصرية</span>
+                </a>
+            </div>
+        </section>
+
+        <section id="page-about" class="page-view">
+            <div class="section-header"><h2><i class="fa-solid fa-circle-info"></i>  بيانات المشروع 47</h2></div>
+            <div class="academic-info-card card mb-4"><ul><li><strong>المشروع:</strong> نظام تحليل نقطه التعادل لتقييم جدوى مشروع انتاجي صغير   </li><li><strong>الجامعة:</strong> معهد الدلتا العالي لنظم المعلومات الإداريه والمحاسبيه   </li><li><strong>العميد:</strong> أ.د. أحمد ابو الفتوح</li></ul></div>
+            
+            <div class="org-tree" style="display: flex; flex-direction: column; align-items: center; margin: 2rem 0; width: 100%; gap: 10px;">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <h2 style="display: inline-block; font-size: 1.75rem; font-weight: 800; border-bottom: 3px solid var(--brand-primary); padding-bottom: 0.5rem; margin-bottom: 0;">تحت إشراف</h2>
+                </div>
+                
+                <div style="width: 2px; height: 30px; background: var(--brand-primary); opacity: 0.8;"></div>
+                <div style="width: 28px; height: 28px; background: var(--card-bg); border: 2px solid var(--brand-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-top: -10px; z-index: 2;">
+                    <i class="fa-solid fa-chevron-down" style="color: var(--brand-primary); font-size: 0.85rem; font-weight: 900;"></i>
+                </div>
+
+                <div class="student-profile-card supervisor-card" style="align-items: center; text-align: center; min-width: 250px; margin-top: -10px;">
+                    <div class="student-badge" style="margin-bottom: 15px; align-self: center;">المشرف الرئيسي</div>
+                    <img src="images/dr_ali.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyNCAyNCcgZmlsbD0nIzk0YTNiOCc+PHBhdGggZD0nTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgNGMxLjkzIDAgMy41IDEuNTcgMy41IDMuNVMxMy45MyAxMyAxMiAxM3MtMy41LTEuNTctMy41LTMuNVMxMC4wNyA2IDEyIDZ6bTAgMTRjLTIuMDMgMC00LjQzLS44Mi02LjE0LTIuODhDNy41NSAxNS44IDkuNjggMTUgMTIgMTVzNC40NS44IDYuMTQgMi4xMkMxNi40MyAxOS4xOCAxNC4wMyAyMCAxMiAyMHonLz48L3N2Zz4='" alt="د. علي المتولي" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--brand-primary); background: #fff; padding: 3px;">
+                    <div class="student-name" style="justify-content: center; font-size: 1.25rem;">د. علي المتولي</div>
+                </div>
+
+                <div style="width: 2px; height: 30px; background: var(--brand-primary); opacity: 0.8;"></div>
+                <div style="width: 28px; height: 28px; background: var(--card-bg); border: 2px solid var(--brand-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-top: -10px; z-index: 2;">
+                    <i class="fa-solid fa-chevron-down" style="color: var(--brand-primary); font-size: 0.85rem; font-weight: 900;"></i>
+                </div>
+
+                <div class="student-profile-card supervisor-card" style="align-items: center; text-align: center; min-width: 250px; margin-top: -10px;">
+                    <div class="student-badge" style="margin-bottom: 15px; align-self: center;">المشرف المساعد</div>
+                    <img src="images/eng_esraa.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyNCAyNCcgZmlsbD0nIzk0YTNiOCc+PHBhdGggZD0nTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgNGMxLjkzIDAgMy41IDEuNTcgMy41IDMuNVMxMy45MyAxMyAxMiAxM3MtMy41LTEuNTctMy41LTMuNVMxMC4wNyA2IDEyIDZ6bTAgMTRjLTIuMDMgMC00LjQzLS44Mi02LjE0LTIuODhDNy41NSAxNS44IDkuNjggMTUgMTIgMTVzNC40NS44IDYuMTQgMi4xMkMxNi40MyAxOS4xOCAxNC4wMyAyMCAxMiAyMHonLz48L3N2Zz4='" alt="م. اسراء الشحات" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--brand-primary); background: #fff; padding: 3px;">
+                    <div class="student-name" style="justify-content: center; font-size: 1.25rem;">م. اسراء الشحات</div>
+                </div>
+            </div>
+            
+            <div class="section-header mt-4"><h2>فريق العمل (20 طالب)</h2></div>
+            <div class="students-list" id="studentsList"></div>
+        </section>
+    </main>
+
+    <footer class="no-print" id="mainFooter">
+        <p>نظام تحليل نقطة التعادل لتقييم جدوى مشروع انتاجي صغير © 2026. جميع الحقوق محفوظة.</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.0/apexcharts.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
