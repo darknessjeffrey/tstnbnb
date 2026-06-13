@@ -75,6 +75,17 @@ let currentLang = 'ar', currentTheme = 'light', currentCurrency = 'EGP', isLogge
 let scenarios = JSON.parse(localStorage.getItem('be_scenarios')) || [{ id: 1, name: "المشروع الأول", fc: 50000, vc: 30, sp: 80, exSales: 1400 }];
 let resultsData = [], apexCharts = {};
 
+// Debounce helper to batch rapid updates (improves chart responsiveness)
+function debounce(fn, wait = 120) {
+    let t;
+    return function(...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+const debouncedCalculateData = debounce(() => { calculateData(); }, 120);
+
 // Utility: load a script only once and resolve when available (used as ApexCharts fallback)
 function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
@@ -102,7 +113,7 @@ function init() {
     
     safeAddListener('langToggle', 'click', () => updateLanguage(currentLang === 'en' ? 'ar' : 'en'));
     safeAddListener('themeToggle', 'click', () => setTheme(currentTheme === 'light' ? 'dark' : 'light'));
-    safeAddListener('currencySelect', 'change', (e) => { currentCurrency = e.target.value; calculateData(); });
+    safeAddListener('currencySelect', 'change', (e) => { currentCurrency = e.target.value; debouncedCalculateData(); });
     safeAddListener('openCalcBtn', 'click', () => { const el = document.getElementById('floating-calc'); if(el) el.classList.remove('hidden'); });
     safeAddListener('closeCalcBtn', 'click', () => { const el = document.getElementById('floating-calc'); if(el) el.classList.add('hidden'); });
     safeAddListener('authForm', 'submit', handleAuth);
@@ -121,7 +132,7 @@ function init() {
             const item = e.target.closest('.scenario-item');
             if (item) {
                 const sc = scenarios.find(s => s.id == item.dataset.id);
-                if(sc) { sc[e.target.name] = e.target.value; localStorage.setItem('be_scenarios', JSON.stringify(scenarios)); calculateData(); loadUserProfile(); }
+                if(sc) { sc[e.target.name] = e.target.value; localStorage.setItem('be_scenarios', JSON.stringify(scenarios)); debouncedCalculateData(); loadUserProfile(); }
             }
         });
     }
@@ -314,7 +325,7 @@ function updateSensitivity() {
     document.getElementById('sensSpVal').innerText = formatCurrency(s.sp);
     localStorage.setItem('be_scenarios', JSON.stringify(scenarios));
     renderScenariosInputs();
-    calculateData();
+    debouncedCalculateData();
 }
 
 function toggleText(btn) {
@@ -471,7 +482,7 @@ function getApexOptions(type) {
             toolbar: { show: false },
             fontFamily: currentLang === 'ar' ? 'Cairo' : 'Inter',
             redrawOnParentResize: true,
-            animations: { enabled: true, dynamicAnimation: { speed: 300 } }
+            animations: { enabled: false }
         },
         theme: { mode: currentTheme },
         dataLabels: { enabled: false },
