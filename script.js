@@ -116,6 +116,7 @@ function init() {
     loadAiQuestions();
     setTheme(localStorage.getItem('theme') || 'light');
     updateLanguage(currentLang);
+    window.addEventListener('resize', refreshApexCharts);
     checkAuth();
 }
 
@@ -156,7 +157,10 @@ function switchPage(pageId) {
     document.getElementById(`page-${pageId}`).classList.add('active');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageId));
     if (pageId === 'calculator' && isLoggedIn) {
-        requestAnimationFrame(() => refreshApexCharts());
+        requestAnimationFrame(() => {
+            refreshApexCharts();
+            setTimeout(refreshApexCharts, 250);
+        });
     }
 }
 
@@ -420,12 +424,21 @@ function deleteHistory(index) {
 }
 function getApexOptions(type) {
     const base = {
-        chart: { type, height: 300, background: 'transparent', toolbar: { show: false }, fontFamily: currentLang === 'ar' ? 'Cairo' : 'Inter' },
+        chart: {
+            type,
+            height: 300,
+            background: 'transparent',
+            toolbar: { show: false },
+            fontFamily: currentLang === 'ar' ? 'Cairo' : 'Inter',
+            redrawOnParentResize: true,
+            animations: { enabled: true, dynamicAnimation: { speed: 300 } }
+        },
         theme: { mode: currentTheme },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 2 },
         colors: SCENARIO_COLORS,
-        grid: { borderColor: currentTheme === 'dark' ? '#334155' : '#e2e8f0' }
+        grid: { borderColor: currentTheme === 'dark' ? '#334155' : '#e2e8f0' },
+        responsive: [{ breakpoint: 768, options: { chart: { height: 280 } } }]
     };
     if (type === 'pie' || type === 'donut') {
         return { ...base, series: [1, 1], labels: ['—', '—'] };
