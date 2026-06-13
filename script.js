@@ -75,6 +75,25 @@ let currentLang = 'ar', currentTheme = 'light', currentCurrency = 'EGP', isLogge
 let scenarios = JSON.parse(localStorage.getItem('be_scenarios')) || [{ id: 1, name: "المشروع الأول", fc: 50000, vc: 30, sp: 80, exSales: 1400 }];
 let resultsData = [], apexCharts = {};
 
+// Utility: load a script only once and resolve when available (used as ApexCharts fallback)
+function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+        if (typeof ApexCharts !== 'undefined') return resolve();
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+            existing.addEventListener('load', () => (typeof ApexCharts !== 'undefined' ? resolve() : reject(new Error('ApexCharts did not initialize'))));
+            existing.addEventListener('error', () => reject(new Error('Failed to load script')));
+            return;
+        }
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        s.onload = () => (typeof ApexCharts !== 'undefined' ? resolve() : reject(new Error('ApexCharts did not initialize')));
+        s.onerror = () => reject(new Error('Failed to load script'));
+        document.head.appendChild(s);
+    });
+}
+
 function init() {
     const safeAddListener = (id, event, handler) => {
         const el = document.getElementById(id);
@@ -269,17 +288,33 @@ function renderScenariosInputs() {
         list.innerHTML += `<div class="scenario-item" data-id="${scen.id}" style="border-top: 3px solid ${SCENARIO_COLORS[i % 4]}"><div class="scenario-header"><input type="text" name="name" value="${scen.name}"><button class="action-btn danger remove-btn" onclick="removeScenario(${scen.id})"><i class="fa-solid fa-trash"></i></button></div><div class="input-group"><label>التكلفة الثابتة</label><input type="number" name="fc" value="${scen.fc}"></div><div class="input-group"><label>ت.متغيرة</label><input type="number" name="vc" value="${scen.vc}"></div><div class="input-group"><label>سعر البيع</label><input type="number" name="sp" value="${scen.sp}"></div><div class="input-group"><label>المبيعات المتوقعة</label><input type="number" name="exSales" value="${scen.exSales}"></div></div>`;
     });
 }
-function addNewScenario() { if(scenarios.length>=4)return; scenarios.push({ id: Date.now(), name: `مشروع ${scenarios.length+1}`, fc: 50000, vc: 30, sp: 80, exSales: 1400 }); localStorage.setItem('be_scenarios', JSON.stringify(scenarios)); renderScenariosInputs(); calculateData(); loadUserProfile(); }
+function addNewScenario() {
+    const MAX_SCENARIOS = 50; // sensible upper bound to avoid UI blowup
+    if (scenarios.length >= MAX_SCENARIOS) {
+        alert(currentLang === 'ar' ? 'تم الوصول للحد الأقصى للمشاريع.' : 'Reached maximum number of projects.');
+        return;
+    }
+    const newSc = { id: Date.now(), name: `مشروع ${scenarios.length + 1}`, fc: 50000, vc: 30, sp: 80, exSales: 1400 };
+    scenarios.push(newSc);
+    localStorage.setItem('be_scenarios', JSON.stringify(scenarios));
+    renderScenariosInputs();
+    calculateData();
+    loadUserProfile();
+}
 function removeScenario(id) { scenarios = scenarios.filter(s => s.id !== id); localStorage.setItem('be_scenarios', JSON.stringify(scenarios)); renderScenariosInputs(); calculateData(); loadUserProfile(); }
 
+
+// ensure slider changes persist
 function updateSensitivity() {
-    if(scenarios.length === 0) return;
+    if (scenarios.length === 0) return;
     let s = scenarios[0];
-    s.vc = parseFloat(document.getElementById('sensVc').value);
-    s.sp = parseFloat(document.getElementById('sensSp').value);
+    s.vc = parseFloat(document.getElementById('sensVc').value) || 0;
+    s.sp = parseFloat(document.getElementById('sensSp').value) || 0;
     document.getElementById('sensVcVal').innerText = formatCurrency(s.vc);
     document.getElementById('sensSpVal').innerText = formatCurrency(s.sp);
-    renderScenariosInputs(); calculateData();
+    localStorage.setItem('be_scenarios', JSON.stringify(scenarios));
+    renderScenariosInputs();
+    calculateData();
 }
 
 function toggleText(btn) {
@@ -296,7 +331,12 @@ function toggleText(btn) {
 function calcTargetProfit(id, val) {
     let s = scenarios.find(x => x.id == id);
     let target = parseFloat(val) || 0;
-    let reqUnits = Math.ceil((s.fc + target) / (s.sp - s.vc));
+    const contrib = parseFloat(s.sp) - parseFloat(s.vc);
+    if (!contrib || contrib <= 0) {
+        document.getElementById(`tp-res-${id}`).innerText = currentLang === 'ar' ? 'مستحيل تحقيقه' : 'Impossible to achieve';
+        return;
+    }
+    let reqUnits = Math.ceil((parseFloat(s.fc) + target) / contrib);
     let enUnits = new Intl.NumberFormat('en-US').format(reqUnits);
     document.getElementById(`tp-res-${id}`).innerText = reqUnits > 0 ? `تحتاج لبيع: ${enUnits} وحدة` : 'مستحيل تحقيقه';
 }
@@ -455,11 +495,15 @@ function getApexOptions(type) {
         xaxis: { categories: ['0', '1', '2', '3'] }
     };
 }
-function initApexCharts() {
+async function initApexCharts() {
     if (typeof ApexCharts === 'undefined') {
-        console.error('ApexCharts library failed to load.');
-        setTimeout(initApexCharts, 500); // إعادة المحاولة بعد 500ms
-        return;
+        // Try a fallback CDN if the global isn't available yet
+        try {
+            await loadScriptOnce('https://cdn.jsdelivr.net/npm/apexcharts');
+        } catch (err) {
+            console.error('ApexCharts library failed to load (both primary and fallback).', err);
+            return;
+        }
     }
     const create = (id, options) => {
         const el = document.querySelector(`#${id}`);
