@@ -244,7 +244,10 @@ main { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; flex-grow: 1; widt
 
 .diagram-layout { grid-template-columns: 1fr !important; }
 .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 2rem; }
-.apex-chart-container { min-height: 320px; width: 100%; margin-bottom: 1.5rem; flex-grow:1; }
+.apex-chart-container { min-height: 320px; height: 100%; width: 100%; min-width: 0; margin-bottom: 1.5rem; flex-grow: 1; }
+.apexcharts-canvas svg { width: 100% !important; }
+.apexcharts-canvas, .apexcharts-inner-svg, .apexcharts-svg { min-height: 320px !important; }
+
 .egx-card { max-width: 560px; margin: 2rem auto; text-align: center; align-items: center; padding: 3rem 2rem; }
 .egx-icon { font-size: 3.5rem; color: var(--brand-primary); margin-bottom: 1.25rem; }
 .egx-desc { font-size: 1.15rem; color: var(--text-secondary); line-height: 1.8; margin-bottom: 0.5rem; }
