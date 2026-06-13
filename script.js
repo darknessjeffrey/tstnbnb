@@ -529,7 +529,8 @@ async function initApexCharts() {
     };
     create('chart-area', { ...getApexOptions('area'), series: [{ name: 'إيراد', data: [0, 0, 0, 0] }, { name: 'تكلفة', data: [0, 0, 0, 0] }] });
     create('chart-line', { ...getApexOptions('line'), series: [{ name: 'إيراد', data: [0, 0, 0, 0] }, { name: 'تكلفة', data: [0, 0, 0, 0] }] });
-    create('chart-column', { ...getApexOptions('column'), series: [{ name: 'الربح', data: [0] }], xaxis: { categories: ['—'] } });
+    // ApexCharts uses 'bar' type for vertical columns; use plotOptions to control orientation
+    create('chart-column', { ...getApexOptions('bar'), plotOptions: { bar: { horizontal: false } }, series: [{ name: 'الربح', data: [0] }], xaxis: { categories: ['—'] } });
     create('chart-bar', { ...getApexOptions('bar'), plotOptions: { bar: { horizontal: true } }, series: [{ name: 'التعادل', data: [0] }], xaxis: { categories: ['—'] } });
     create('chart-pie', getApexOptions('pie'));
     create('chart-doughnut', getApexOptions('donut'));
