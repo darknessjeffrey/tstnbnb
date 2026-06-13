@@ -546,7 +546,20 @@ function refreshApexCharts() {
     updateApexCharts();
 }
 function updateApexCharts() {
-    if (!resultsData.length) return;
+    // If there's no valid results data, show placeholder series so charts aren't blank
+    if (!resultsData.length) {
+        if (!Object.keys(apexCharts).length) { initApexCharts(); return; }
+        const safeGet = (key) => apexCharts[key] && typeof apexCharts[key].updateSeries === 'function' ? apexCharts[key] : null;
+        const area = safeGet('chart-area'); if (area) { area.updateSeries([{ name: 'إيراد', data: [0,0,0,0] }, { name: 'تكلفة', data: [0,0,0,0] }]); area.updateOptions({ xaxis: { categories: ['—','—','—','—'] } }); }
+        const column = safeGet('chart-column'); if (column) { column.updateSeries([{ name: 'الربح', data: [0] }]); column.updateOptions({ xaxis: { categories: ['—'] } }); }
+        const bar = safeGet('chart-bar'); if (bar) { bar.updateSeries([{ name: 'التعادل', data: [0] }]); bar.updateOptions({ xaxis: { categories: ['—'] } }); }
+        const pie = safeGet('chart-pie'); if (pie) { pie.updateSeries([1]); pie.updateOptions({ labels: ['—'] }); }
+        const donut = safeGet('chart-doughnut'); if (donut) { donut.updateSeries([1,1]); donut.updateOptions({ labels: ['—','—'] }); }
+        const cs = safeGet('chart-candlestick'); if (cs) { cs.updateSeries([{ data: [{ x: '—', y: [0,0,0,0] }] }]); }
+        const bp = safeGet('chart-boxplot'); if (bp) { bp.updateSeries([{ type: 'boxPlot', data: [{ x: '—', y: [0,0,0,0,0] }] }]); }
+        const hist = safeGet('chart-histogram'); if (hist) { hist.updateSeries([{ name: 'احتمالية التحقق (%)', data: [0,0,0,0,0] }]); hist.updateOptions({ xaxis: { categories: ['—','—','—','—','—'] } }); }
+        return;
+    }
     // ensure charts are initialized
     if (!Object.keys(apexCharts).length) {
         initApexCharts();
