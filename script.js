@@ -150,10 +150,10 @@ function checkAuth() {
         }
         switchPage('calculator');
         renderScenariosInputs();
-        requestAnimationFrame(() => {
-            initApexCharts();
+        requestAnimationFrame(async () => {
+            await initApexCharts();
             calculateData();
-        }); 
+        });
         loadHistory();
         loadUserProfile();
     } else switchPage('auth');
@@ -535,22 +535,51 @@ function refreshApexCharts() {
     updateApexCharts();
 }
 function updateApexCharts() {
-    if(!resultsData.length || !apexCharts['chart-area']) return;
-    const names = resultsData.map(r => r.name), profits = resultsData.map(r => r.expectedProfit), beps = resultsData.map(r => r.bepUnits), s1 = resultsData[0], units = [0, Math.ceil(s1.bepUnits/2), s1.bepUnits, s1.bepUnits*1.5];
-    const seriesArea = [{ name: 'إيراد', data: units.map(u => u * s1.sp) }, { name: 'تكلفة', data: units.map(u => s1.fc + (s1.vc * u)) }];
-    apexCharts['chart-area'].updateSeries(seriesArea); apexCharts['chart-area'].updateOptions({ xaxis: { categories: units } }); 
-    apexCharts['chart-line'].updateSeries(seriesArea); apexCharts['chart-line'].updateOptions({ xaxis: { categories: units } }); 
-    apexCharts['chart-column'].updateSeries([{ name: 'الربح', data: profits }]); apexCharts['chart-column'].updateOptions({ xaxis: { categories: names } }); 
-    apexCharts['chart-bar'].updateSeries([{ name: 'التعادل', data: beps }]); apexCharts['chart-bar'].updateOptions({ xaxis: { categories: names } }); 
-    let pieData = resultsData.map(r => r.exSales > 0 ? r.exSales : 1);
-    apexCharts['chart-pie'].updateSeries(pieData); apexCharts['chart-pie'].updateOptions({ labels: names }); 
-    apexCharts['chart-doughnut'].updateSeries([s1.fc > 0 ? s1.fc : 1, (s1.vc * s1.exSales) > 0 ? (s1.vc * s1.exSales) : 1]); 
-    apexCharts['chart-doughnut'].updateOptions({ labels: ['التكاليف الثابتة', 'إجمالي التكاليف المتغيرة'] });
-    apexCharts['chart-candlestick'].updateSeries([{ data: resultsData.map(r => { let o=r.sp, h=r.sp*1.2, l=r.sp*0.8, c=r.sp*1.05; return { x: r.name, y: [o, h, l, c] }; }) }]);
-    apexCharts['chart-boxplot'].updateSeries([{ type: 'boxPlot', data: resultsData.map(r => { let m=r.vc, min=m*0.7, q1=m*0.85, q3=m*1.15, max=m*1.3; return { x: r.name, y: [min, q1, m, q3, max] }; }) }]);
-    let baseSales = s1.exSales || 1000;
-    apexCharts['chart-histogram'].updateSeries([{ name: 'احتمالية التحقق (%)', data: [10, 25, 40, 15, 10] }]); 
-    apexCharts['chart-histogram'].updateOptions({ xaxis: { categories: [`< ${baseSales*0.5}`, `${baseSales*0.5}-${baseSales*0.8}`, `${baseSales*0.8}-${baseSales*1.2}`, `${baseSales*1.2}-${baseSales*1.5}`, `> ${baseSales*1.5}`] } });
+    if (!resultsData.length) return;
+    // ensure charts are initialized
+    if (!Object.keys(apexCharts).length) {
+        initApexCharts();
+        return;
+    }
+    const safeGet = (key) => apexCharts[key] && typeof apexCharts[key].updateSeries === 'function' ? apexCharts[key] : null;
+    const names = resultsData.map(r => String(r.name));
+    const profits = resultsData.map(r => Number(r.expectedProfit) || 0);
+    const beps = resultsData.map(r => Number(r.bepUnits) || 0);
+    const s1 = resultsData[0];
+    const bepNum = Number(s1.bepUnits) || 0;
+    const units = [0, Math.ceil(bepNum / 2), bepNum, Math.ceil(bepNum * 1.5)];
+    const seriesArea = [{ name: 'إيراد', data: units.map(u => Number(u) * (Number(s1.sp) || 0)) }, { name: 'تكلفة', data: units.map(u => (Number(s1.fc) || 0) + ((Number(s1.vc) || 0) * Number(u))) }];
+
+    try {
+        const area = safeGet('chart-area');
+        if (area) { area.updateSeries(seriesArea); area.updateOptions({ xaxis: { categories: units } }); }
+
+        const line = safeGet('chart-line');
+        if (line) { line.updateSeries(seriesArea); line.updateOptions({ xaxis: { categories: units } }); }
+
+        const column = safeGet('chart-column');
+        if (column) { column.updateSeries([{ name: 'الربح', data: profits }]); column.updateOptions({ xaxis: { categories: names } }); }
+
+        const bar = safeGet('chart-bar');
+        if (bar) { bar.updateSeries([{ name: 'التعادل', data: beps }]); bar.updateOptions({ xaxis: { categories: names } }); }
+
+        const pie = safeGet('chart-pie');
+        if (pie) { let pieData = resultsData.map(r => Number(r.exSales) > 0 ? Number(r.exSales) : 1); pie.updateSeries(pieData); pie.updateOptions({ labels: names }); }
+
+        const donut = safeGet('chart-doughnut');
+        if (donut) { donut.updateSeries([ (Number(s1.fc) > 0 ? Number(s1.fc) : 1), ((Number(s1.vc) * Number(s1.exSales)) > 0 ? (Number(s1.vc) * Number(s1.exSales)) : 1) ]); donut.updateOptions({ labels: ['التكاليف الثابتة', 'إجمالي التكاليف المتغيرة'] }); }
+
+        const cs = safeGet('chart-candlestick');
+        if (cs) { cs.updateSeries([{ data: resultsData.map(r => { let o = Number(r.sp) || 0, h = o * 1.2, l = o * 0.8, c = o * 1.05; return { x: r.name, y: [o, h, l, c] }; }) }]); }
+
+        const bp = safeGet('chart-boxplot');
+        if (bp) { bp.updateSeries([{ type: 'boxPlot', data: resultsData.map(r => { let m = Number(r.vc) || 0, min = m * 0.7, q1 = m * 0.85, q3 = m * 1.15, max = m * 1.3; return { x: r.name, y: [min, q1, m, q3, max] }; }) }]); }
+
+        const hist = safeGet('chart-histogram');
+        if (hist) { let baseSales = Number(s1.exSales) || 1000; hist.updateSeries([{ name: 'احتمالية التحقق (%)', data: [10, 25, 40, 15, 10] }]); hist.updateOptions({ xaxis: { categories: [`< ${Math.round(baseSales * 0.5)}`, `${Math.round(baseSales * 0.5)}-${Math.round(baseSales * 0.8)}`, `${Math.round(baseSales * 0.8)}-${Math.round(baseSales * 1.2)}`, `${Math.round(baseSales * 1.2)}-${Math.round(baseSales * 1.5)}`, `> ${Math.round(baseSales * 1.5)}`] } }); }
+    } catch (err) {
+        console.error('Failed to update ApexCharts:', err);
+    }
 }
 function loadAiQuestions() {
     const aiQuestions = [ "ما هي نقطة التعادل؟", "كيف أحسب هامش الأمان؟", "كيف يمكنني تقليل التكاليف الثابتة؟", "ما تأثير زيادة سعر البيع على التعادل؟", "ما هو هامش المساهمة؟", "كيف أحسب الربح المستهدف؟", "ما الفرق بين التكلفة الثابتة والمتغيرة؟", "ماذا يعني المدى الملائم؟", "كيف أتعامل مع التكاليف الغارقة؟", "ما هي تكلفة الفرصة البديلة؟", "كيف أحلل أكثر من منتج؟", "ما هي الرافعة التشغيلية؟", "ماذا يحدث إذا زادت التكلفة المتغيرة للوحدة؟", "كيف أقرأ المخطط المساحي؟", "متى يجب إغلاق المشروع مؤقتاً؟", "ما هي نسبة هامش المساهمة؟", "ما هو تحليل الحساسية وكيف يفيدني؟", "كيف أستخدم الشموع اليابانية؟", "ما هو العائد على الاستثمار (ROI)؟", "كيف أوزع الحصص السوقية؟", "هل هناك طرق تسعير بديلة؟", "ما هي التكلفة المعيارية؟" ];
